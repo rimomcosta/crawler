@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Web Crawler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: #333;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            margin: 0 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .panel-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group .form-control {
+            flex: 1;
+        }
+
+        .input-group-text {
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            font-size: 14px;
+            color: #666;
+            margin-left: -5px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .results-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .results-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            flex: 1;
+        }
+
+        .status-running {
+            color: #4CAF50;
+        }
+
+        .status-stopped {
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                margin: 0 10px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🕷️ PDF Web Crawler</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <!-- Control Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    ⚙️ Configuration
+                </div>
+                <div class="panel-body">
+                    <form id="crawlForm">
+                        <div class="form-group">
+                            <label for="websiteUrl">Website URL</label>
+                            <input type="text" class="form-control" id="websiteUrl" 
+                                   placeholder="example.com or www.example.com" required>
+                            <div class="help-text">Enter the website URL to crawl for PDFs</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maxDepth">Crawl Depth</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="maxDepth" 
+                                       min="1" max="10" value="3" required>
+                                <span class="input-group-text">levels</span>
+                            </div>
+                            <div class="help-text">How deep to crawl (1-10 levels)</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="downloadDir">Download Directory</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="downloadDir" 
+                                       placeholder="Click Browse to select folder">
+                                <button type="button" class="btn btn-secondary" id="selectDirBtn">Browse</button>
+                            </div>
+                            <div class="help-text">Select folder for PDF downloads</div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="toggle-switch">
+                                <label>Auto-download PDFs</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="autoDownload">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" id="startBtn">
+                            ▶️ Start Crawling
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-block" id="stopBtn" style="display:none;">
+                            ⏹️ Stop Crawling
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    📄 PDF Results
+                </div>
+                <div class="panel-body">
+                    <div class="search-bar">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search PDFs...">
+                        <select class="form-control" id="statusFilter" style="width: 150px;">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="downloaded">Downloaded</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+
+                    <div id="resultsContainer">
+                        <div class="empty-state">
+                            No PDFs found yet. Start crawling to find PDFs.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PDFCrawler {
+            constructor() {
+                this.isRunning = false;
+                this.statusInterval = null;
+                this.resultsInterval = null;
+                this.pdfs = [];
+                this.init();
+            }
+
+            init() {
+                // Form submission
+                document.getElementById('crawlForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.startCrawling();
+                });
+
+                // Stop button
+                document.getElementById('stopBtn').addEventListener('click', () => {
+                    this.stopCrawling();
+                });
+
+                // Browse button
+                document.getElementById('selectDirBtn').addEventListener('click', () => {
+                    this.selectDirectory();
+                });
+
+                // Search and filter
+                document.getElementById('searchInput').addEventListener('input', () => {
+                    this.filterResults();
+                });
+
+                document.getElementById('statusFilter').addEventListener('change', () => {
+                    this.filterResults();
+                });
+
+                // Check initial status
+                this.updateStatus();
+            }
+
+            async selectDirectory() {
+                try {
+                    const response = await fetch('/api/select-directory', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('downloadDir').value = data.path;
+                        // No alert needed - the path appears in the input field
+                    }
+                } catch (error) {
+                    console.error('Error selecting directory:', error);
+                }
+            }
+
+            async startCrawling() {
+                const websiteUrl = document.getElementById('websiteUrl').value.trim();
+                const maxDepth = parseInt(document.getElementById('maxDepth').value);
+                const downloadDir = document.getElementById('downloadDir').value.trim();
+                const autoDownload = document.getElementById('autoDownload').checked;
+
+                if (!websiteUrl) {
+                    this.showMessage('Please enter a website URL', 'error');
+                    return;
+                }
+
+                if (autoDownload && !downloadDir) {
+                    this.showMessage('Please select a download directory', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/start-crawl', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            website_url: websiteUrl,
+                            max_depth: maxDepth,
+                            download_dir: downloadDir,
+                            auto_download: autoDownload
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        this.isRunning = true;
+                        this.updateButtons();
+                        this.startMonitoring();
+                        this.showMessage('Crawling started!', 'success');
+                    } else {
+                        this.showMessage(data.error || 'Failed to start crawling', 'error');
+                    }
+                } catch (error) {
+                    this.showMessage('Network error: ' + error.message, 'error');
+                }
+            }
+
+            async stopCrawling() {
+                try {
+                    const response = await fetch('/api/stop-crawl', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+
+                    if (response.ok) {
+                        this.isRunning = false;
+                        this.updateButtons();
+                        this.stopMonitoring();
+                        this.showMessage('Crawling stopped', 'info');
+                    }
+                } catch (error) {
+                    this.showMessage('Error: ' + error.message, 'error');
+                }
+            }
+
+            startMonitoring() {
+                this.statusInterval = setInterval(() => this.updateStatus(), 2000);
+                this.resultsInterval = setInterval(() => this.updateResults(), 2000);
+            }
+
+            stopMonitoring() {
+                if (this.statusInterval) clearInterval(this.statusInterval);
+                if (this.resultsInterval) clearInterval(this.resultsInterval);
+            }
+
+            async updateStatus() {
+                try {
+                    const response = await fetch('/api/status');
+                    const data = await response.json();
+                    this.isRunning = data.is_running;
+                    this.updateButtons();
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                }
+            }
+
+            async updateResults() {
+                try {
+                    const response = await fetch('/api/results');
+                    const data = await response.json();
+                    this.pdfs = data.pdfs || [];
+                    this.renderResults();
+                } catch (error) {
+                    console.error('Error updating results:', error);
+                }
+            }
+
+            renderResults() {
+                const container = document.getElementById('resultsContainer');
+                
+                if (this.pdfs.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No PDFs found yet. Start crawling to find PDFs.</div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Source</th>
+                                <th>Size</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                const statusFilter = document.getElementById('statusFilter').value;
+
+                const filteredPdfs = this.pdfs.filter(pdf => {
+                    const matchesSearch = !searchTerm || pdf.filename.toLowerCase().includes(searchTerm);
+                    const matchesStatus = !statusFilter || pdf.status === statusFilter;
+                    return matchesSearch && matchesStatus;
+                });
+
+                filteredPdfs.forEach(pdf => {
+                    html += `
+                        <tr>
+                            <td>${pdf.filename}</td>
+                            <td><a href="${pdf.source_url}" target="_blank">View Page</a></td>
+                            <td>${pdf.size || '-'}</td>
+                            <td>${pdf.status || 'pending'}</td>
+                            <td>
+                                <button class="btn btn-primary" onclick="window.open('${pdf.url}', '_blank')">
+                                    Download
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }
+
+            filterResults() {
+                this.renderResults();
+            }
+
+            updateButtons() {
+                const startBtn = document.getElementById('startBtn');
+                const stopBtn = document.getElementById('stopBtn');
+                
+                if (this.isRunning) {
+                    startBtn.style.display = 'none';
+                    stopBtn.style.display = 'block';
+                } else {
+                    startBtn.style.display = 'block';
+                    stopBtn.style.display = 'none';
+                }
+            }
+
+            showMessage(message, type) {
+                // Silent - just log to console
+                console.log(`[${type}] ${message}`);
+            }
+        }
+
+        // Initialize the app
+        const app = new PDFCrawler();
+    </script>
+</body>
+</html>
