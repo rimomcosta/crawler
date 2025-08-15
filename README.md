@@ -2,7 +2,7 @@
 
 A powerful and user-friendly web crawler designed to find and download PDF files from websites. Built with Python (Flask) and modern JavaScript, featuring a beautiful UI and real-time progress tracking.
 
-![PDF Web Crawler Screenshot](screenshot.jpg)
+![PDF Web Crawler Screenshot](screenshot.jpg?v=2)
 
 ## ✨ Features
 
